@@ -21,7 +21,7 @@ You can invoke `solve-polynominal` either asynchronously or synchronously. Here 
     console.log(solve("10x^2 - 28x + 16 = 0", {useFractions: true})); // [2, "4/5"]
     console.log(solve("3x^3 - 10x^2 + 14x + 27 = 0", {decimalPlaces: 3})); // [-1, "2.167 + 2.075i", "2.167 - 2.075i"]
     
-It is recommended to use `solve-polynominal` asynchronously to solve polynominals of higher order (degrees 5 or more), where compuations are heavy and work should be ideally offloaded. Here are some asynchronous examples.
+It is recommended to use `solve-polynominal` asynchronously to solve polynominals of higher order (degrees 5 or more), where computations are heavy and work should ideally be offloaded. Here are some asynchronous examples.
 
     // logs the following after a heavy computation session:
     // "Solution #1: -1.2153" 
