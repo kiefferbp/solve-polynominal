@@ -1,4 +1,4 @@
-var evaluateDerivative = (function () {
+var evaluatePower = (function () {
     "use strict";
 
     // a helper function that returns the square of x
@@ -22,6 +22,54 @@ var evaluateDerivative = (function () {
             return Math.pow(x, 1/3);
         } else { // Math.pow attempts to compute a complex cube root for negative numbers
             return -Math.pow(-x, 1/3); // use the identity x^(1/3) = -(-x)^(1/3) (for real numbers)
+        }
+    }
+
+    // a helper function that computes the sum of two complex numbers
+    function complexSum(x, y) {
+        if (typeof x === "number") {
+            x = {realPart: x, imaginaryPart: 0};
+        }
+
+        if (typeof y === "number") {
+            y = {realPart: y, imaginaryPart: 0};
+        }
+
+        return {
+            realPart: x.realPart + y.realPart,
+            imaginaryPart: x.imaginaryPart + y.imaginaryPart
+        };
+    }
+
+    // a helper function that computes the product of two complex numbers
+    function complexProduct(x, y) {
+        if (typeof x === "number") {
+            x = {realPart: x, imaginaryPart: 0};
+        }
+
+        if (typeof y === "number") {
+            y = {realPart: y, imaginaryPart: 0};
+        }
+
+        // (a + bi)(c + di) = ac - bd + (ad + bc)i
+        var a = x.realPart;
+        var b = x.imaginaryPart;
+        var c = y.realPart;
+        var d = y.imaginaryPart;
+
+        return {realPart: (a*c - b*d), imaginaryPart: (a*d + b*c)};
+    }
+
+    // a helper function that computes the non-negative integral power of a complex number
+    function complexPower(x, pow) {
+        if (typeof x === "number") {
+            x = {realPart: x, imaginaryPart: 0};
+        }
+
+        if (pow === 0) {
+            return {realPart: 1, imaginaryPart: 0};
+        } else {
+            return complexProduct(x, complexPower(x, pow - 1));
         }
     }
 
@@ -282,10 +330,12 @@ var evaluateDerivative = (function () {
             var degree = coefficients.length - 1;
 
             if (degree === 0) { // constant polynominal
-                return (runningTotal + coefficients[0]);
+                return complexSum(runningTotal, coefficients[0]);
             } else {
                 leadingCoefficient = coefficients.shift();
-                runningTotal += leadingCoefficient * Math.pow(argument, degree);
+
+                // runningTotal += leadingCoefficient*Math.pow(argument, degree) but with complex numbers
+                runningTotal = complexSum(runningTotal, complexProduct(leadingCoefficient, complexPower(argument, degree)));
 
                 return evaluatePolynominalHelper(coefficients, argument, runningTotal);
             }
@@ -314,5 +364,5 @@ var evaluateDerivative = (function () {
         return evaluatePolynominal(derivativeCoefficients, argument);
     }
 
-    return evaluateDerivative; // debug
+    return evaluatePolynominal;
 }());
