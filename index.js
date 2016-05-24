@@ -152,8 +152,6 @@ var solveQuartic = (function () {
     // a helper function that solves the quartic equation ax^4 + bx^3 + cx^2 + dx + e = 0
     // uses the method discribed at 1728.com
     function solveQuartic(a, b, c, d, e) {
-        debugger;
-
         // quartic solutions
         var solution1 = {};
         var solution2 = {};
@@ -198,7 +196,7 @@ var solveQuartic = (function () {
         }
 
         p = squareRoot(Y2);
-        q = squareRoot(Y3);
+        q = {realPart: p.realPart, imaginaryPart: -1*p.imaginaryPart};
         s = b/(4*a);
 
         // if p and q are complex, they are conjugates of each other
@@ -206,7 +204,7 @@ var solveQuartic = (function () {
         if (resolventCubicSolutions[1].isReal) { // three real roots (p and q are real)
             r = -g/(8 * p.realPart * q.realPart);
         } else { // p and q are complex
-            r = -g/(8 * squareRoot(square(p.realPart) + square(p.imaginaryPart)));
+            r = -g/(8 * squareRoot(square(Y2.realPart) + square(Y3.imaginaryPart)));
         }
 
         // compute the solutions
