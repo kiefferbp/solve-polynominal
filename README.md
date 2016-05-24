@@ -34,7 +34,7 @@ It is recommended to use `solve-polynominal` asynchronously to solve polynominal
     // "Solution #8: 1.1845 - 0.4391i"
     // "Solution #9: 1.1845 + 0.4391i"
     solve("x^9 + x + 7 = 0", {decimalPlaces: 4}, function (solutions) {
-        solutions.forEach(function (solution, index)) {
+        solutions.forEach(function (solution, index) {
             console.log("Solution #" + (index + 1) + ": " + solution);
         });
     });
