@@ -1,4 +1,4 @@
-var evaluatePower = (function () {
+var evaluatePolynominal = (function () {
     "use strict";
 
     // a helper function that returns the square of x
