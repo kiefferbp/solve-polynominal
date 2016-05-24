@@ -1,4 +1,4 @@
-var solveQuartic = (function () {
+var evaluateDerivative = (function () {
     "use strict";
 
     // a helper function that returns the square of x
@@ -69,6 +69,7 @@ var solveQuartic = (function () {
         var discriminant = Math.pow(b, 2) - 4*a*c;
         var solution1 = {};
         var solution2 = {};
+        var solutions = [solutions1, solutions2];
 
         if (discriminant >= 0) { // real solutions
             solution1.realPart = (-b + squareRoot(discriminant))/(2*a);
@@ -87,6 +88,17 @@ var solveQuartic = (function () {
             solution2.imaginaryPart = -squareRoot(discriminant)/(2*a);
             solution2.isReal = false;
         }
+
+        // perform zero cleanup on the solutions
+        solutions.forEach(function (solution, index) {
+            if (solution.realPart.isApproximatelyZero()) {
+                solutions[index].realPart = 0;
+            }
+
+            if (solution.imaginaryPart.isApproximatelyZero()) {
+                solutions[index].imaginaryPart = 0;
+            }
+        });
 
         return [solution1, solution2];
     }
@@ -242,9 +254,65 @@ var solveQuartic = (function () {
         solution4.imaginaryPart = -p.imaginaryPart - q.imaginaryPart;
         solution4.isReal = solution4.imaginaryPart.isApproximatelyZero();
 
+        // perform zero cleanup on the solutions
+        solutions.forEach(function (solution, index) {
+            if (solution.realPart.isApproximatelyZero()) {
+                solutions[index].realPart = 0;
+            }
+
+            if (solution.imaginaryPart.isApproximatelyZero()) {
+                solutions[index].imaginaryPart = 0;
+                solutions[index].isReal = true; // since we don't know if the solution is real in advance
+            }
+        });
+
         return solutions;
     }
 
+    // a helper function that evaluates a polynomial at a given value
+    // arguments:
+    //      coefficients: an array of numbers that represent the polynominal coefficients in standard form
+    //                    (e.g., 3x^2 + 4x + 7 has coefficients of [3, 4, 7])
+    //          argument: the number to evaluate the polynominal at
+    // returns:
+    //      a number that represents the result of evaluating this polynominal at x = argument
+    function evaluatePolynominal(coefficients, argument) {
+        function evaluatePolynominalHelper(coefficients, argument, runningTotal) {
+            var leadingCoefficient;
+            var degree = coefficients.length - 1;
 
-    return solveQuartic;
+            if (degree === 0) { // constant polynominal
+                return (runningTotal + coefficients[0]);
+            } else {
+                leadingCoefficient = coefficients.shift();
+                runningTotal += leadingCoefficient * Math.pow(argument, degree);
+
+                return evaluatePolynominalHelper(coefficients, argument, runningTotal);
+            }
+        }
+
+        return evaluatePolynominalHelper(coefficients, argument, 0);
+    }
+
+    // a helper function that evaluates a polynomial's derivative at a given value
+    // arguments:
+    //      coefficients: an array of numbers that represent the polynominal coefficients in standard form
+    //                    (e.g., 3x^2 + 4x + 7 has coefficients of [3, 4, 7])
+    //          argument: the number to evaluate the polynominal at
+    // returns:
+    //      a number that represents the result of evaluating the derivative of this polynominal at x = argument
+    function evaluateDerivative(coefficients, argument) {
+        var derivativeCoefficients = [];
+        var degree = coefficients.length - 1;
+        var index;
+
+        // compute the derivative
+        for (index = degree; index >= 0; index -= 1) {
+            derivativeCoefficients.push(index * coefficients[degree - index]);
+        }
+
+        return evaluatePolynominal(derivativeCoefficients, argument);
+    }
+
+    return evaluateDerivative; // debug
 }());
