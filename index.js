@@ -21,7 +21,7 @@ var solveQuartic = (function () {
         if (x >= 0) {
             return Math.pow(x, 1/3);
         } else { // Math.pow attempts to compute a complex cube root for negative numbers
-            return -1*Math.pow(-x, 1/3); // use the identity x^(1/3) = -(-x)^(1/3) (for real numbers)
+            return -Math.pow(-x, 1/3); // use the identity x^(1/3) = -(-x)^(1/3) (for real numbers)
         }
     }
 
@@ -67,8 +67,26 @@ var solveQuartic = (function () {
     // a helper function that solves the quadratic equation ax^2 + bx + c = 0
     function solveQuadratic(a, b, c) {
         var discriminant = Math.pow(b, 2) - 4*a*c;
-        var solution1 = (-b + squareRoot(discriminant))/(2*a);
-        var solution2 = (-b - squareRoot(discriminant))/(2*a);
+        var solution1 = {};
+        var solution2 = {};
+
+        if (discriminant >= 0) { // real solutions
+            solution1.realPart = (-b + squareRoot(discriminant))/(2*a);
+            solution1.imaginaryPart = 0;
+            solution1.isReal = true;
+
+            solution2.realPart = (-b - squareRoot(discriminant))/(2*a);
+            solution2.imaginaryPart = 0;
+            solution2.isReal = true;
+        } else { // complex solutions
+            solution1.realPart = -b/(2*a);
+            solution1.imaginaryPart = squareRoot(discriminant)/(2*a);
+            solution1.isReal = false;
+
+            solution2.realPart = -b/(2*a);
+            solution2.imaginaryPart = -squareRoot(discriminant)/(2*a);
+            solution2.isReal = false;
+        }
 
         return [solution1, solution2];
     }
@@ -91,21 +109,21 @@ var solveQuartic = (function () {
         h = square(g)/4 + cube(f)/27;
 
         if (h > 0 && !h.isApproximatelyZero()) { // 1 real root, 2 complex roots
-            R = -1*g/2 + squareRoot(h);
+            R = -g/2 + squareRoot(h);
             S = cubeRoot(R);
-            T = -1*g/2 - squareRoot(h);
+            T = -g/2 - squareRoot(h);
             U = cubeRoot(T);
 
             solution1.realPart = S + U - b/(3*a);
             solution1.imaginaryPart = 0;
             solution1.isReal = true;
 
-            solution2.realPart = -1*(S + U)/2 - b/(3*a);
+            solution2.realPart = -(S + U)/2 - b/(3*a);
             solution2.imaginaryPart = (S - U)*squareRoot(3)/2;
             solution2.isReal = false;
 
-            solution3.realPart = -1*(S + U)/2 - b/(3*a);
-            solution3.imaginaryPart = -1*(S - U)*squareRoot(3)/2;
+            solution3.realPart = -(S + U)/2 - b/(3*a);
+            solution3.imaginaryPart = -(S - U)*squareRoot(3)/2;
             solution3.isReal = false;
         } else { // 3 real solutions
             if (f.isApproximatelyZero() && g.isApproximatelyZero() && h.isApproximatelyZero()) { // all solutions are equal
@@ -115,11 +133,11 @@ var solveQuartic = (function () {
             } else { // unequal solutions
                 i = squareRoot(square(g)/4 - h);
                 j = cubeRoot(i);
-                k = Math.acos(-1*g/(2*i));
-                L = -1*j;
+                k = Math.acos(-g/(2*i));
+                L = -j;
                 M = Math.cos(k/3);
                 N = squareRoot(3)*Math.sin(k/3);
-                P = -1*b/(3*a);
+                P = -b/(3*a);
 
                 solution1.realPart = 2*j*Math.cos(k/3) - b/(3*a);
                 solution1.imaginaryPart = 0;
@@ -175,7 +193,7 @@ var solveQuartic = (function () {
         var h = e - 3*fourthPower(b)/256 + square(b)*c/16 - b*d/4;
 
         // solve the resolvent cubic
-        var resolventCubicSolutions = solveCubic(1, f/2, (square(f) - 4*h)/16, -1*square(g)/64);
+        var resolventCubicSolutions = solveCubic(1, f/2, (square(f) - 4*h)/16, -square(g)/64);
 
         // Note: the source says to pick two roots of the resolvent cubic as follows:
         // 1) if all three roots are real, pick any two non-zero ones
@@ -196,7 +214,7 @@ var solveQuartic = (function () {
         }
 
         p = squareRoot(Y2);
-        q = {realPart: p.realPart, imaginaryPart: -1*p.imaginaryPart};
+        q = {realPart: p.realPart, imaginaryPart: -p.imaginaryPart};
         s = b/(4*a);
 
         // if p and q are complex, they are conjugates of each other
@@ -216,16 +234,17 @@ var solveQuartic = (function () {
         solution2.imaginaryPart = p.imaginaryPart - q.imaginaryPart;
         solution2.isReal = solution2.imaginaryPart.isApproximatelyZero();
 
-        solution3.realPart = -1*p.realPart + q.realPart - r - s;
-        solution3.imaginaryPart = -1*p.imaginaryPart + q.imaginaryPart;
+        solution3.realPart = -p.realPart + q.realPart - r - s;
+        solution3.imaginaryPart = -p.imaginaryPart + q.imaginaryPart;
         solution3.isReal = solution3.imaginaryPart.isApproximatelyZero();
 
-        solution4.realPart = -1*p.realPart - q.realPart + r - s;
-        solution4.imaginaryPart = -1*p.imaginaryPart - q.imaginaryPart;
+        solution4.realPart = -p.realPart - q.realPart + r - s;
+        solution4.imaginaryPart = -p.imaginaryPart - q.imaginaryPart;
         solution4.isReal = solution4.imaginaryPart.isApproximatelyZero();
 
         return solutions;
     }
+
 
     return solveQuartic;
 }());
