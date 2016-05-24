@@ -100,7 +100,7 @@ var evaluateDerivative = (function () {
             }
         });
 
-        return [solution1, solution2];
+        return solutions;
     }
 
     // a helper function that solves the cubic equation ax^3 + bx^2 + cx + d = 0
