@@ -485,7 +485,7 @@ var solvePolynominal = (function () {
     }
 
     // a helper function that finds the zeroes of the polynominal with the given coefficients
-    function solvePolynominal(coefficients) {
+    function solvePolynominalHelper(coefficients) {
         var solutions = [];
         var numOfSolutions = coefficients.length - 1;
         var quotient, zero;
@@ -500,13 +500,58 @@ var solvePolynominal = (function () {
 
             // get more solutions
             if (solutions.length < numOfSolutions) {
-                return solutions.concat(solvePolynominal(quotient));
+                return solutions.concat(solvePolynominalHelper(quotient));
             } else {
                 return solutions;
             }
         } catch (e) { // Newton's method failed
-            return e.stack;
+            console.log(e.stack);
+            return new Error("Newton's method failed!");
         }
+    }
+
+    // the grand daddy
+    // note: options and callback are optional
+    function solvePolynominal(equation) {
+        var options, callback;
+        var coefficients = [];
+        var degree, matches, i;
+
+        if (typeof equation !== "string") {
+            throw new Error("Invalid arguments.");
+        }
+
+        // obtain the optional arguments
+        if (arguments[1]) {
+            console.log("args 1");
+            if (Object.prototype.toString.call(arguments[1]) === "[object Function]") {
+                callback = arguments[1];
+            } else if (typeof arguments[1] === "object") {
+                options = arguments[1];
+            } else {
+                throw new Error("Invalid arguments.");
+            }
+        }
+
+        if (arguments[2]) {
+            console.log("args 1");
+            if (Object.prototype.toString.call(arguments[2]) === "[object Function]") {
+                callback = arguments[2];
+            } else {
+                throw new Error("Invalid arguments.");
+            }
+        }
+
+        // get matches
+        matches = equation.replace(/(\s+)/g, "").replace("=0", "").match(/(\+|-)?\d*(x(\^\d+)?)?/g);
+        degree = matches.length - 2; // since matches contains the empty string
+
+        // get the coefficients
+        for (i = 0; i <= degree; i += 1) {
+            coefficients[i] = parseInt(matches[i].replace("x", "1x"));
+        }
+
+        return solvePolynominalHelper(coefficients);
     }
 
     return solvePolynominal;
