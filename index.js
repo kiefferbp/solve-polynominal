@@ -1,4 +1,4 @@
-var evaluatePolynominal = (function () {
+var solvePolynominal = (function () {
     "use strict";
 
     // a helper function that returns the square of x
@@ -25,6 +25,27 @@ var evaluatePolynominal = (function () {
         }
     }
 
+    // a helper function that computes the complex conjugate of a number
+    function complexConjugate(x) {
+        if (typeof x === "number") {
+            return x; // a real number is its own conjugate
+        } else {
+            return {
+                realPart: x.realPart,
+                imaginaryPart: -x.imaginaryPart
+            };
+        }
+    }
+
+    // a helper function that computes the complex modulous of a complex number
+    function complexModulus(x) {
+        if (typeof x === "number") {
+            return Math.abs(x);
+        } else {
+            return squareRoot(square(x.realPart) + square(x.imaginaryPart));
+        }
+    }
+
     // a helper function that computes the sum of two complex numbers
     function complexSum(x, y) {
         if (typeof x === "number") {
@@ -38,6 +59,22 @@ var evaluatePolynominal = (function () {
         return {
             realPart: x.realPart + y.realPart,
             imaginaryPart: x.imaginaryPart + y.imaginaryPart
+        };
+    }
+
+    // a helper function that computes the difference of two complex numbers
+    function complexDifference(x, y) {
+        if (typeof x === "number") {
+            x = {realPart: x, imaginaryPart: 0};
+        }
+
+        if (typeof y === "number") {
+            y = {realPart: y, imaginaryPart: 0};
+        }
+
+        return {
+            realPart: x.realPart - y.realPart,
+            imaginaryPart: x.imaginaryPart - y.imaginaryPart
         };
     }
 
@@ -58,6 +95,25 @@ var evaluatePolynominal = (function () {
         var d = y.imaginaryPart;
 
         return {realPart: (a*c - b*d), imaginaryPart: (a*d + b*c)};
+    }
+
+    // a helper function that divides two complex numbers
+    function complexDivision(x, y) {
+        if (typeof x === "number") {
+            x = {realPart: x, imaginaryPart: 0};
+        }
+
+        if (typeof y === "number") {
+            y = {realPart: y, imaginaryPart: 0};
+        }
+
+        // (a + bi)/(c + di) = (ac + bd)/(c^2 + d^2) + [(bc - ad)/(c^2 + d^2)]i
+        var a = x.realPart;
+        var b = x.imaginaryPart;
+        var c = y.realPart;
+        var d = y.imaginaryPart;
+
+        return {realPart: (a*c + b*d)/(square(c) + square(d)), imaginaryPart: (b*c - a*d)/(square(c) + square(d))};
     }
 
     // a helper function that computes the non-negative integral power of a complex number
@@ -89,7 +145,7 @@ var evaluatePolynominal = (function () {
             if (n.imaginaryPart.isApproximatelyZero()) { // real number in object form
                 return {realPart: squareRoot(n.realPart), imaginaryPart: 0};
             } else { // complex number
-                r = squareRoot(square(n.realPart) + square(n.imaginaryPart));
+                r = complexModulus(n);
                 y = squareRoot((r - n.realPart)/2);
                 x = n.imaginaryPart/(2*y);
 
@@ -108,8 +164,7 @@ var evaluatePolynominal = (function () {
 
     // we also need the same function for objects that represent complex numbers
     Object.prototype.isApproximatelyZero = function () {
-        var absoluteValue = squareRoot(square(this.realPart) + square(this.imaginaryPart));
-        return (absoluteValue < 1e-12);
+        return (complexModulus(this) < 1e-12);
     }
 
     // a helper function that solves the quadratic equation ax^2 + bx + c = 0
@@ -274,7 +329,7 @@ var evaluatePolynominal = (function () {
         }
 
         p = squareRoot(Y2);
-        q = {realPart: p.realPart, imaginaryPart: -p.imaginaryPart};
+        q = complexConjugate(p);
         s = b/(4*a);
 
         // if p and q are complex, they are conjugates of each other
@@ -282,7 +337,7 @@ var evaluatePolynominal = (function () {
         if (resolventCubicSolutions[1].isReal) { // three real roots (p and q are real)
             r = -g/(8 * p.realPart * q.realPart);
         } else { // p and q are complex
-            r = -g/(8 * squareRoot(square(Y2.realPart) + square(Y3.imaginaryPart)));
+            r = -g/(8 * complexModulus(Y2));
         }
 
         // compute the solutions
@@ -326,14 +381,12 @@ var evaluatePolynominal = (function () {
     //      a number that represents the result of evaluating this polynominal at x = argument
     function evaluatePolynominal(coefficients, argument) {
         function evaluatePolynominalHelper(coefficients, argument, runningTotal) {
-            var leadingCoefficient;
             var degree = coefficients.length - 1;
+            var leadingCoefficient = coefficients.shift();
 
             if (degree === 0) { // constant polynominal
-                return complexSum(runningTotal, coefficients[0]);
+                return complexSum(runningTotal, leadingCoefficient);
             } else {
-                leadingCoefficient = coefficients.shift();
-
                 // runningTotal += leadingCoefficient*Math.pow(argument, degree) but with complex numbers
                 runningTotal = complexSum(runningTotal, complexProduct(leadingCoefficient, complexPower(argument, degree)));
 
@@ -358,11 +411,110 @@ var evaluatePolynominal = (function () {
 
         // compute the derivative
         for (index = degree; index >= 0; index -= 1) {
-            derivativeCoefficients.push(index * coefficients[degree - index]);
+            derivativeCoefficients.push(complexProduct(index, coefficients[degree - index]));
         }
 
         return evaluatePolynominal(derivativeCoefficients, argument);
     }
 
-    return evaluatePolynominal;
+    // a helper function that divides the polynominal given by coefficients by x - argument
+    // note: we assume that x - argument divides the polynominal cleanly, and that the polynominal already has a leading coefficient of 1
+    // this will return an array consisting of the quotient's coefficients
+    function syntheticDivide(coefficients, argument) {
+        var i;
+        var quotient = [];
+        var quotientDegree = coefficients.length - 2;
+
+        // the first coefficient of the quotient is already 1
+        quotient.push({realPart: 1, imaginaryPart: 0});
+
+        // now compute the remaining coefficients
+        for (i = 1; i <= quotientDegree; i += 1) {
+            quotient[i] = complexSum(coefficients[i], complexProduct(quotient[i - 1], argument));
+        }
+
+        return quotient;
+    }
+
+    // a helper function that finds a zero of the polynominal with the given coefficients
+    // if division by zero or divergence is detected, this function throws an exception
+    function findZero(coefficients) {
+        // constants
+        var SOLUTION_PRECISION = 1e-10;
+        var MAX_ATTEMPTS = 10000;
+
+        var fPrimeAtCurrentGuess, i, subtrahend;
+        var fAtCurrentGuess = Number.MAX_VALUE;
+        var attemptCount = 0;
+        var currentGuess = {realPart: Math.random(), imaginaryPart: Math.random()};
+
+        if (coefficients[0].isApproximatelyZero()) { // the leading coefficient is zero
+            return findZero(coefficients.slice(1));
+        }
+
+        if (coefficients[coefficients.length - 1].isApproximatelyZero()) { // the constant term is zero
+            return {realPart: 0, imaginaryPart: 0}; // 0 is clearly a zero
+        }
+
+        // normalize the coefficients
+        for (i = 1; i < coefficients.length; i += 1) {
+            coefficients[i] = coefficients[i]/coefficients[0];
+        }
+
+        coefficients[0] = 1;
+
+        // run Newton's method
+        while (true) { // loop breaks when currentGuess yields the desired precision, division by zero occurs, or we do too many attempts
+            // check for breaking conditions
+            if (fAtCurrentGuess.isApproximatelyZero()) {
+                break; // stop running Newton's method
+            } else if (attemptCount >= MAX_ATTEMPTS) {
+                throw new RangeError("Divergence detected.");
+            } else {
+                attemptCount += 1;
+            }
+
+            // compute subtrahend = f(x)/f'(x)
+            fAtCurrentGuess = evaluatePolynominal(coefficients, currentGuess);
+            fPrimeAtCurrentGuess = evaluateDerivative(coefficients, currentGuess);
+
+            if (fPrimeAtCurrentGuess.isApproximatelyZero()) { // divison by zero
+                throw new RangeError("Division by zero detected.");
+            }
+
+            subtrahend = complexDivision(fAtCurrentGuess, fPrimeAtCurrentGuess);
+            currentGuess = complexDifference(currentGuess, subtrahend);
+            fAtCurrentGuess = evaluatePolynominal(coefficients, currentGuess); // update f(x) again
+        }
+
+        // if we got to this point, we have a valid solution
+        return currentGuess;
+    }
+
+    // a helper function that finds the zeroes of the polynominal with the given coefficients
+    function solvePolynominal(coefficients) {
+        var solutions = [];
+        var numOfSolutions = coefficients.length - 1;
+        var quotient, zero;
+
+        try {
+            // find a zero if possible
+            zero = findZero(coefficients);
+            solutions.push(zero);
+
+            // factor out polynominal with this zero
+            quotient = syntheticDivide(coefficient, zero);
+
+            // get more solutions
+            if (solutions.length < numOfSolutions) {
+                return solutions.concat(solvePolynominal(quotient));
+            } else {
+                return solutions;
+            }
+        } catch (e) { // Newton's method failed
+            return e.stack;
+        }
+    }
+
+    return solvePolynominal;
 }());
