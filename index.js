@@ -380,21 +380,15 @@ var solvePolynominal = (function () {
     // returns:
     //      a number that represents the result of evaluating this polynominal at x = argument
     function evaluatePolynominal(coefficients, argument) {
-        function evaluatePolynominalHelper(coefficients, argument, runningTotal) {
-            var degree = coefficients.length - 1;
-            var leadingCoefficient = coefficients.shift();
+        var degree = coefficients.length - 1;
+        var result = 0;
+        var i;
 
-            if (degree === 0) { // constant polynominal
-                return complexSum(runningTotal, leadingCoefficient);
-            } else {
-                // runningTotal += leadingCoefficient*Math.pow(argument, degree) but with complex numbers
-                runningTotal = complexSum(runningTotal, complexProduct(leadingCoefficient, complexPower(argument, degree)));
-
-                return evaluatePolynominalHelper(coefficients, argument, runningTotal);
-            }
+        for (i = 0; i <= degree; i += 1) {
+            result = complexSum(result, complexProduct(coefficients[degree - i], complexPower(argument, i)));
         }
 
-        return evaluatePolynominalHelper(coefficients, argument, 0);
+        return result;
     }
 
     // a helper function that evaluates a polynomial's derivative at a given value
@@ -410,7 +404,7 @@ var solvePolynominal = (function () {
         var index;
 
         // compute the derivative
-        for (index = degree; index >= 0; index -= 1) {
+        for (index = degree; index >= 1; index -= 1) {
             derivativeCoefficients.push(complexProduct(index, coefficients[degree - index]));
         }
 
@@ -443,8 +437,7 @@ var solvePolynominal = (function () {
         var SOLUTION_PRECISION = 1e-10;
         var MAX_ATTEMPTS = 10000;
 
-        var fPrimeAtCurrentGuess, i, subtrahend;
-        var fAtCurrentGuess = Number.MAX_VALUE;
+        var fAtCurrentGuess, fPrimeAtCurrentGuess, i, subtrahend;
         var attemptCount = 0;
         var currentGuess = {realPart: Math.random(), imaginaryPart: Math.random()};
 
@@ -458,13 +451,17 @@ var solvePolynominal = (function () {
 
         // normalize the coefficients
         for (i = 1; i < coefficients.length; i += 1) {
-            coefficients[i] = coefficients[i]/coefficients[0];
+            coefficients[i] = complexDivision(coefficients[i], coefficients[0]);
         }
 
         coefficients[0] = 1;
 
         // run Newton's method
         while (true) { // loop breaks when currentGuess yields the desired precision, division by zero occurs, or we do too many attempts
+            // compute f(x) and f'(x) at the current guess
+            fAtCurrentGuess = evaluatePolynominal(coefficients, currentGuess);
+            fPrimeAtCurrentGuess = evaluateDerivative(coefficients, currentGuess);
+
             // check for breaking conditions
             if (fAtCurrentGuess.isApproximatelyZero()) {
                 break; // stop running Newton's method
@@ -474,17 +471,13 @@ var solvePolynominal = (function () {
                 attemptCount += 1;
             }
 
-            // compute subtrahend = f(x)/f'(x)
-            fAtCurrentGuess = evaluatePolynominal(coefficients, currentGuess);
-            fPrimeAtCurrentGuess = evaluateDerivative(coefficients, currentGuess);
-
             if (fPrimeAtCurrentGuess.isApproximatelyZero()) { // divison by zero
                 throw new RangeError("Division by zero detected.");
             }
 
+            // compute subtrahend = f(x)/f'(x) and the new guess
             subtrahend = complexDivision(fAtCurrentGuess, fPrimeAtCurrentGuess);
             currentGuess = complexDifference(currentGuess, subtrahend);
-            fAtCurrentGuess = evaluatePolynominal(coefficients, currentGuess); // update f(x) again
         }
 
         // if we got to this point, we have a valid solution
@@ -503,7 +496,7 @@ var solvePolynominal = (function () {
             solutions.push(zero);
 
             // factor out polynominal with this zero
-            quotient = syntheticDivide(coefficient, zero);
+            quotient = syntheticDivide(coefficients, zero);
 
             // get more solutions
             if (solutions.length < numOfSolutions) {
