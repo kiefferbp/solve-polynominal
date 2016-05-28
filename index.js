@@ -543,7 +543,7 @@ var solvePolynominal = (function () {
         }
 
         // get matches
-        matches = equation.replace(/(\s+)/g, "").replace("=0", "").match(/(\+|-)?\d*(x(\^\d+)?)?/g);
+        matches = equation.replace(/(\s+|=\s*0)/g, "").match(/(\+|-)?\d*(x(\^\d+)?)?/g);
         degree = matches.length - 2; // since matches contains the empty string
 
         // get the coefficients
