@@ -80,7 +80,7 @@
                 return thisSquared.raiseToPower(pow / 2);
             }
 
-            return this.multiply(this).raiseToPower(pow - 1);
+            return this.multiply(this.raiseToPower(pow - 1));
         }
 
         getPrincipalSqrt() {
