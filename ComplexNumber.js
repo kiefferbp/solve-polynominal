@@ -22,6 +22,20 @@
             return (this.getModulus() < 1e-12);
         }
 
+        toString() {
+            let result = new String(this.realPart);
+
+            if (this.imaginaryPart > 0) {
+                result += "+" + this.imagPart;
+            }
+
+            if (this.imaginaryPart < 0) {
+                result += "-" + (new String(-this.imagPart));
+            }
+
+            return result;
+        }
+
         // adds |other| to this complex number and returns the result
         add(other) {
             const resultRealPart = this.realPart + other.realPart;
